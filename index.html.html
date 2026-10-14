@@ -1,0 +1,652 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Armita Golmohammadi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@400;700&family=Vazirmatn:wght@400;500;700&family=JetBrains+Mono:wght@400;500&family=Schibsted+Grotesk:wght@400;500&display=swap">
+<style>
+/* Layout: a horizontal strip of 1200×720 sheets on a stone canvas; vertical scroll drives the strip sideways and the zoom breathes between 1 and 0.6.
+   Palette: Persian tilework — lapis ink, pomegranate line-art, firoozeh (turquoise) duotone fills, saffron sun. */
+:root{
+  --canvas:#DDE3E6;      /* cool plaster */
+  --sheet:#FBFAF7;
+  --ink:#121B4E;         /* lapis */
+  --line:#D21F4B;        /* pomegranate: strokes, borders */
+  --duo:#43CFC1;         /* firoozeh: fills, stripes, dots */
+  --sun:#FFB21A;         /* saffron: circles */
+  --muted:#6C7680;
+  --tick:#97A1A8;
+  --display:"Schibsted Grotesk","Helvetica Neue",Arial,sans-serif;
+  --serif:"Bitter",Georgia,serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --W:1200px;--H:720px;
+  --inv:1;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{background:var(--canvas);color:var(--ink)}
+body{margin:0;overflow-x:hidden;font-family:var(--display)}
+a{color:inherit;text-decoration:none}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:fixed;left:16px;top:-60px;z-index:100;background:var(--ink);color:var(--sheet);padding:10px 16px;font:500 13px var(--mono)}
+.skip:focus{top:16px}
+:focus-visible{outline:3px solid var(--line);outline-offset:3px}
+
+/* ---------- loader ---------- */
+.loader{position:fixed;inset:0;z-index:90;background:var(--canvas);display:grid;place-items:center;transition:clip-path .7s cubic-bezier(.7,0,.2,1)}
+.loader.done{clip-path:inset(0 0 100% 0)}
+.loader span{display:inline-block;width:10px;height:10px;margin:0 5px;border-radius:50%;background:var(--line);animation:dot 1s ease-in-out infinite}
+.loader span:nth-child(2){animation-delay:.12s;background:var(--duo)}
+.loader span:nth-child(3){animation-delay:.24s;background:var(--sun)}
+.loader span:nth-child(4){animation-delay:.36s;background:var(--ink)}
+@keyframes dot{50%{transform:translateY(-12px)}}
+
+/* ---------- chrome: header, minimap, scroll cue ---------- */
+.hdr{position:fixed;z-index:40;top:calc(24px + env(safe-area-inset-top,0px));left:28px;right:28px;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
+.hdr>*{pointer-events:auto}
+.brand{display:flex;align-items:center;gap:16px}
+.logo svg{width:38px;height:30px;display:block}
+.bar{width:1px;height:26px;background:var(--ink);opacity:.35;transform-origin:top;animation:barIn .5s ease-out 1s both}
+@keyframes barIn{from{transform:scaleY(0)}}
+.menuBtn,.hire{font:700 12px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;letter-spacing:4px;text-transform:uppercase;color:var(--ink);background:none;border:0;padding:6px 0;cursor:pointer}
+.menuBtn .mask{display:block;height:12px;overflow:hidden}
+.menuBtn .mask span{display:block;transition:transform .4s cubic-bezier(.6,0,.2,1)}
+.menuBtn[aria-expanded="true"] .mask span{transform:translateY(-100%)}
+.hire{display:flex;align-items:center;gap:10px}
+.hire svg{width:26px;height:22px}
+
+.minimap{position:fixed;z-index:40;top:calc(30px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);width:231px;height:18px}
+.ticks{display:flex;gap:9px;height:100%}
+.ticks i{width:1px;height:18px;background:var(--tick)}
+.ticks i:nth-child(8n+1){background:var(--ink)}
+.tracker{position:absolute;top:0;width:30px;height:18px}
+.indicator{position:absolute;top:-1px;left:0;width:30px;height:20px;border:1px solid var(--ink);background:var(--sheet);pointer-events:none;display:grid;place-items:center;font:500 9px var(--mono);color:var(--ink)}
+
+.scrollcue{position:fixed;z-index:40;left:30px;bottom:calc(28px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center;gap:12px;pointer-events:none;transition:opacity .4s}
+.scrollcue .letters{display:flex;flex-direction:column;align-items:center;font:500 11px/1.5 var(--mono);color:var(--muted);animation:scrollBob 2.4s ease-in-out infinite}
+.scrollcue .vline{width:1px;height:110px;background:var(--ink);opacity:.5;transform-origin:top;animation:vLineIn 1.2s ease-out 1.3s both}
+@keyframes vLineIn{from{transform:scaleY(0)}}
+@keyframes scrollBob{50%{transform:translateY(6px)}}
+
+/* ---------- canvas ---------- */
+.ghost{pointer-events:none;user-select:none;width:1px}
+.center{position:fixed;top:50%;left:50%;width:var(--W);height:var(--H);transform:translate(-50%,-50%) scale(var(--fit,1));display:flex;align-items:center}
+.frames{position:relative;width:var(--W);height:var(--H);transform-origin:left center;will-change:transform}
+.frame{position:absolute;top:0;width:var(--W);height:var(--H);outline:0;user-select:none;display:block}
+.frame:not(:first-child){opacity:0;animation:fadeFrames .35s ease-in-out 1.3s forwards}
+@keyframes fadeFrames{to{opacity:1}}
+.frame:focus-visible [data-sheet]{outline:4px solid var(--line);outline-offset:4px}
+.sheet{position:relative;width:100%;height:100%;background:var(--sheet);overflow:clip}
+.label{position:absolute;bottom:100%;left:0;padding-bottom:10px;font:400 14px var(--mono);color:var(--muted);transform-origin:left bottom;transform:scale(var(--inv));white-space:nowrap}
+.label b{color:var(--line);font-weight:500}
+.giant{position:absolute;margin:0;font:400 720px/0.78 var(--display);letter-spacing:-.045em;white-space:nowrap;user-select:none;color:var(--ink)}
+.dot{color:var(--duo)}
+
+/* SVG line-art system */
+.ink{fill:none;stroke:var(--line);stroke-width:2.5px;stroke-linecap:round;stroke-linejoin:round}
+.ink *{vector-effect:non-scaling-stroke}
+.duo{fill:var(--duo);stroke:var(--duo);stroke-width:2.5px;stroke-linejoin:round}
+.bob{animation:bob 3.6s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-6px)}}
+
+/* striped button */
+.btn{position:relative;display:inline-block;font:700 17px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--line)}
+.btn__label{position:relative;z-index:1;display:block;padding:15px 42px;border:3px solid var(--line);border-radius:8px;background:var(--sheet);transition:transform .25s ease-out}
+.btn__fill{position:absolute;inset:0;border-radius:8px;transform:translate(6px,6px);background:var(--stripes);transition:transform .25s ease-out}
+.btn:hover .btn__label,.btn:focus-visible .btn__label{transform:translate(-3px,-3px)}
+.btn:hover .btn__fill{transform:translate(8px,8px)}
+:root{--stripes:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpath d='M-2 2l4-4M0 10L10 0M8 12l4-4' stroke='%2343CFC1' stroke-width='3'/%3E%3C/svg%3E")}
+
+/* ---- frame 1: intro ---- */
+.main{display:flex;align-items:center;height:100%;padding:64px;color:var(--ink)}
+.sun{position:absolute;width:720px;height:720px;border-radius:9999px;background:var(--sun)}
+.main .sun{left:-380px;top:0}
+.main h1{position:relative;margin:0;font:500 76px/1.12 var(--display);letter-spacing:-.02em}
+.clipReveal{display:block;overflow:hidden}
+.clipReveal>span{display:inline-block;transform:translateY(105%);transition:transform .9s cubic-bezier(.2,.8,.2,1)}
+.ready .clipReveal>span{transform:none}
+.clipReveal[data-variant="offset"]{margin-left:64px}
+.clipReveal .fa{font-family:var(--serif);font-weight:400;font-size:.5em;color:var(--line);vertical-align:.55em;margin-left:.3em}
+.band{position:absolute;right:0;top:250px;width:470px;height:190px;background:var(--stripes);transform:translateX(110%);transition:transform 1.5s ease-out .4s}
+.ready .band{transform:none}
+.avatar{position:absolute;right:60px;top:120px;width:300px;height:420px;opacity:0;transform:scale(.85);transition:opacity .6s ease-out .7s,transform .8s cubic-bezier(.3,1.5,.5,1) .7s}
+.ready .avatar{opacity:1;transform:none}
+.avatar .head{animation:breathe 2.2s ease-in-out infinite alternate;transform-origin:150px 160px}
+.avatar .body{animation:breathe2 2.2s ease-in-out infinite alternate;transform-origin:150px 400px}
+@keyframes breathe{to{transform:translateY(-4px) rotate(-1deg)}}
+@keyframes breathe2{to{transform:scale(1.02,1.03)}}
+.stamp{position:absolute;right:64px;bottom:44px;font:400 13px var(--mono);color:var(--muted);text-align:right;line-height:1.6}
+
+/* ---- frame 2: ZarrinHub ---- */
+.zh .giant{left:-70px;top:-10px}
+.zh .sun{left:520px;top:0;mix-blend-mode:multiply}
+.zh .note{position:absolute;right:56px;bottom:56px;width:360px;background:var(--sheet);padding:28px 30px 34px;border:1px solid var(--ink)}
+.note h3{margin:0;font:700 30px/1.12 var(--serif);text-wrap:balance}
+.note p{margin:14px 0 24px;font:400 17px/1.6 var(--serif)}
+.note b{font-weight:700}
+.fig{font:500 12px var(--mono);letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+
+/* ---- frame 3: APIs ---- */
+.apis .giant{left:-40px;top:-6px}
+.dots{position:absolute;right:70px;bottom:70px;width:420px;height:260px;background:radial-gradient(circle,var(--duo) 3.2px,transparent 3.6px) 0 0/22px 22px;transition:transform .3s ease-out}
+.apis .cap{position:absolute;left:64px;bottom:56px;max-width:520px;font:400 20px/1.65 var(--serif);margin:0}
+
+/* ---- frame 4: atom ---- */
+.atom{display:flex;flex-direction:column;justify-content:center;align-items:center;height:100%;gap:28px}
+.atom svg{width:325px;height:360px}
+.atom p{margin:0;font:400 13px var(--mono);color:var(--muted);letter-spacing:1px}
+
+/* ---- frame 5: Projects ---- */
+.proj .giant{left:48px;top:-6px}
+.proj .giant .dot{color:var(--line)}
+
+/* ---- frame 6: work ---- */
+.work{padding:64px;height:100%;display:flex;flex-direction:column}
+.work h2{margin:0;font:700 60px/1.12 var(--serif);letter-spacing:-.01em}
+.cols{margin-top:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:0}
+.col{padding:0 34px;border-left:1px solid #C9D3D8}
+.col:first-child{padding-left:0;border-left:0}
+.col svg{width:150px;height:110px;display:block;margin-bottom:26px}
+.col h3{margin:0;font:700 30px/1.15 var(--serif)}
+.col p{margin:14px 0 0;font:400 17px/1.6 var(--serif)}
+.col .fig{margin-top:18px}
+
+/* ---- frame 7: contact ---- */
+.contact{--padding:50px;position:relative;display:flex;justify-content:center;align-items:center;width:100%;height:100%}
+.contact .corner{position:absolute;font:400 85px/1 var(--display);letter-spacing:-.03em;color:var(--ink);border-radius:12px;transition:color .25s}
+.contact a.corner:hover{color:var(--line)}
+[data-position="tl"]{top:var(--padding);left:var(--padding)}
+[data-position="tr"]{top:var(--padding);right:var(--padding)}
+[data-position="bl"]{bottom:var(--padding);left:var(--padding)}
+[data-position="br"]{bottom:var(--padding);right:var(--padding);text-align:right}
+.corner small{display:block;font:400 13px var(--mono);letter-spacing:1px;color:var(--muted);margin-top:8px}
+.copy{background:none;border:0;padding:0;cursor:copy;color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:14px}
+.email{display:grid;place-items:center;overflow:hidden;height:110px;padding:0 30px;border-bottom:6px solid var(--duo)}
+.email p{grid-area:1/1;margin:0;font:500 96px/1 var(--display);letter-spacing:-.03em;transition:transform .4s cubic-bezier(.6,0,.2,1)}
+.email p:last-child{transform:translateY(110px);color:var(--line)}
+.copy.copied .email p:first-child{transform:translateY(-110px)}
+.copy.copied .email p:last-child{transform:none}
+.addr{font:400 15px var(--mono);color:var(--muted);user-select:text}
+
+/* ---- frame 8: manifesto ---- */
+.manifesto .sheet{background:var(--duo)}
+.contents{padding:50px 60px;display:flex;align-items:center;height:100%}
+.contents p{margin:0;font:400 72px/1.1 var(--display);letter-spacing:-.025em;color:var(--ink)}
+.contents p span{color:var(--sheet)}
+
+/* ---------- menu ---------- */
+.menu{position:fixed;inset:0;z-index:35;background:var(--canvas);display:flex;flex-direction:column;justify-content:center;padding:100px 16px 60px max(16px,12vw);clip-path:inset(0 0 100% 0);transition:clip-path .6s cubic-bezier(.7,0,.2,1);visibility:hidden}
+.menu.open{clip-path:inset(0);visibility:visible}
+.menu ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.menu li a{display:inline-flex;align-items:baseline;gap:18px;font:700 clamp(34px,6vw,64px)/1.15 var(--serif);letter-spacing:-.01em;opacity:0;transform:translateY(24px);transition:opacity .4s,transform .5s cubic-bezier(.2,.8,.2,1),color .2s}
+.menu li a small{font:500 12px var(--mono);color:var(--muted);letter-spacing:1px}
+.menu li a:hover{color:var(--line)}
+.menu.open li a{opacity:1;transform:none}
+.menu.open li:nth-child(2) a{transition-delay:.06s,.06s,0s}
+.menu.open li:nth-child(3) a{transition-delay:.12s,.12s,0s}
+.menu.open li:nth-child(4) a{transition-delay:.18s,.18s,0s}
+.menu.open li:nth-child(5) a{transition-delay:.24s,.24s,0s}
+.socials{display:flex;gap:28px;margin-top:48px;flex-wrap:wrap}
+.socials a{font:500 13px var(--mono);letter-spacing:2px;text-transform:uppercase;border-bottom:2px solid var(--duo);padding-bottom:4px;opacity:0;transition:opacity .4s .35s}
+.menu.open .socials a{opacity:1}
+
+/* ---------- crosshair ---------- */
+.cross{position:fixed;left:0;top:0;width:22px;height:22px;z-index:80;pointer-events:none;mix-blend-mode:difference;opacity:0}
+@media (pointer:fine){html.canvas-mode,html.canvas-mode a,html.canvas-mode button{cursor:none}.canvas-mode .cross{opacity:1}}
+
+/* ---------- stacked fallback ---------- */
+html.stack .ghost,html.stack .minimap,html.stack .scrollcue,html.stack .cross{display:none}
+html.stack body{padding-inline:16px;padding-block:96px 48px}
+html.stack .center{position:static;transform:none;width:auto;height:auto;display:block}
+html.stack .frames{width:auto;height:auto;transform:none!important;display:flex;flex-direction:column;gap:48px}
+html.stack .frame{position:relative;left:auto!important;width:100%;height:auto;aspect-ratio:5/3;max-width:100%}
+html.stack .frame .sheet{position:absolute;top:0;left:0;width:var(--W);height:var(--H);transform:scale(var(--k,.3));transform-origin:top left}
+html.stack .label{transform:none;bottom:100%}
+html.stack .hdr{left:16px;right:16px}
+
+/* ---- skills ---- */
+.sk-title .giant{left:-40px;top:-10px}
+.sk-title .sun{left:600px;top:0;mix-blend-mode:multiply}
+.sk-title .cap,.apis .cap{position:absolute;left:64px;bottom:56px;max-width:520px;font:400 22px/1.6 var(--serif);margin:0;background:var(--sheet);padding:10px 0}
+.skills{padding:60px 56px 48px;display:flex;flex-direction:column;justify-content:space-between}
+.sk-grid{position:relative;z-index:1;display:grid;grid-template-columns:repeat(4,1fr)}
+.sk{padding:0 26px;border-left:1px solid #C9D3D8}
+.sk:first-child{padding-left:0;border-left:0}
+.sk svg{width:96px;height:80px;display:block;margin-bottom:22px}
+.sk h3{margin:0 0 16px;font:700 26px/1.15 var(--serif)}
+.sk ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.sk li{font:400 16px/1.45 var(--serif);padding-left:16px;position:relative}
+.sk li::before{content:"";position:absolute;left:0;top:.55em;width:7px;height:7px;background:var(--line);transform:rotate(45deg)}
+.chips{position:relative;z-index:1;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.chips .fig{margin:0 8px 0 0}
+.chips span:not(.fig){font:500 14px var(--mono);border:2px solid var(--ink);border-radius:999px;padding:7px 14px;background:var(--sheet)}
+.chips span:nth-child(3n+2):not(.fig){background:var(--duo);border-color:var(--duo)}
+.skills .dots{right:40px;bottom:30px;width:300px;height:120px;opacity:.5}
+.atom .edu-h{margin:-6px 0 0;font:700 48px/1.1 var(--serif)}
+/* ---- timeline ---- */
+.tlw{padding:64px;display:flex;flex-direction:column}
+.tlw h2{margin:0;font:700 60px/1.12 var(--serif)}
+.tl{list-style:none;margin:auto 0 30px;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:30px;position:relative}
+.tl::before{content:"";position:absolute;left:0;right:0;top:40px;height:2px;background:var(--ink);transform-origin:left;animation:lineIn 1.2s ease-out 1.6s both}
+@keyframes lineIn{from{transform:scaleX(0)}}
+.st .yr{display:block;height:28px;font:500 13px var(--mono);letter-spacing:1px;color:var(--muted)}
+.st i{display:block;width:22px;height:22px;margin:0 0 26px;border:3px solid var(--line);border-radius:50%;background:var(--sheet);position:relative}
+.st i::after{content:"";position:absolute;inset:2px;border-radius:50%;transform:translate(4px,4px);background:var(--duo);z-index:-1}
+.st.now i{background:var(--sun);width:30px;height:30px;margin-top:-4px;margin-bottom:22px}
+.st.now .yr{color:var(--line)}
+.st h3{margin:0;font:700 26px/1.2 var(--serif)}
+.st p{margin:8px 0 0;font:400 16px/1.5 var(--serif)}
+.st p.d{margin-top:14px;padding-top:12px;border-top:1px solid #C9D3D8;font-size:15px}
+html.fa .sk li{padding-left:0;padding-right:16px}
+html.fa .sk li::before{left:auto;right:0}
+html.fa .sk-title .giant{top:-90px}
+html.fa .sk-title .cap{left:auto;right:64px;text-align:right}
+html.fa .sk h3,html.fa .st h3,html.fa .tlw h2,html.fa .atom .edu-h{line-height:1.45}
+html.fa .sk li,html.fa .st p{line-height:1.8}
+html.fa .tl{direction:rtl}
+html.fa .tl::before{transform-origin:right}
+
+/* ---- hero name + about ---- */
+.main h1.name{font-size:124px;line-height:1.02;letter-spacing:-.035em}
+.main h1.name .clipReveal[data-variant="offset"]{margin-left:96px}
+.menu.open li:nth-child(6) a{transition-delay:.3s,.3s,0s}
+.about{padding:64px;display:grid;grid-template-columns:1.15fr 1fr;gap:64px;align-items:center}
+.about .sun{width:300px;height:300px;right:-110px;top:-110px;left:auto}
+.about .lead{position:relative;margin:0;font:500 50px/1.14 var(--display);letter-spacing:-.02em;text-wrap:balance}
+.ab-side{position:relative;display:grid;gap:18px}
+.ab-side p{margin:0;font:400 19px/1.65 var(--serif)}
+.facts{margin:12px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:16px 24px;border-top:2px solid var(--ink);padding-top:18px}
+.facts dt{font:500 11px var(--mono);letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.facts dd{margin:4px 0 0;font:700 19px var(--serif)}
+html.fa .main h1.name{line-height:1.3;font-size:120px}
+html.fa .main h1.name .clipReveal[data-variant="offset"]{margin-left:0;margin-right:96px}
+html.fa .about{direction:rtl}
+html.fa .about .lead{font-weight:700;line-height:1.5;font-size:44px}
+html.fa .ab-side p{line-height:1.95}
+html.fa .facts dt{letter-spacing:0;font-family:"Vazirmatn",var(--mono);font-size:13px}
+
+/* ---- requirements pass ---- */
+.hero-text{position:relative;display:grid;gap:30px}
+.tagline{margin:0;max-width:520px;font:400 21px/1.6 var(--serif);background:var(--sheet);padding:14px 18px;border-left:4px solid var(--line)}
+.about{grid-template-columns:1.1fr 1fr;align-items:start;padding-top:60px}
+.ab-main{position:relative;display:grid;gap:28px}
+.about .lead{font-size:44px}
+.path ol{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.path li{font:500 14px var(--mono);border:2px solid var(--ink);border-radius:999px;padding:6px 12px;background:var(--sheet)}
+.path li:last-child{background:var(--sun);border-color:var(--sun)}
+.path li:not(:last-child)::after{content:"→";margin-left:12px;color:var(--line)}
+.ctas{display:flex;align-items:center;gap:28px;flex-wrap:wrap}
+.textlink{font:700 17px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--ink);border-bottom:3px solid var(--duo);padding-bottom:3px}
+.textlink:hover{color:var(--line)}
+.use{margin:18px 0 0;padding-top:12px;border-top:1px dashed var(--tick);font:400 15px/1.55 var(--serif);display:grid;gap:4px}
+.use .fig{margin:0;color:var(--line)}
+.skills .sk svg{height:64px;width:80px;margin-bottom:14px}
+.cta-center{display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center}
+.cta-h{margin:0;font:700 34px/1.2 var(--serif);max-width:520px;text-wrap:balance}
+.hint{margin:0;font:400 15px var(--serif);color:var(--muted)}
+html.fa .tagline{border-left:0;border-right:4px solid var(--line);line-height:1.9}
+html.fa .hero-text{direction:rtl}
+html.fa .path li:not(:last-child)::after{content:"←";margin-left:0;margin-right:12px}
+html.fa .path ol{direction:rtl}
+html.fa .path li{font-family:"Vazirmatn",var(--mono)}
+html.fa .about .lead{font-size:40px}
+html.fa .use{line-height:1.8}
+html.fa .use .fig,html.fa .fig{letter-spacing:0;font-family:"Vazirmatn",var(--mono)}
+html.fa .cta-h{line-height:1.6}
+html.fa .textlink{font-family:"Vazirmatn",sans-serif}
+
+/* ---------- Persian ---------- */
+.right{display:flex;align-items:center;gap:22px}
+.langBtn{font:500 14px/1 "Vazirmatn",var(--mono);color:var(--ink);background:var(--sheet);border:2px solid var(--ink);border-radius:999px;min-width:44px;height:30px;padding:0 10px;cursor:pointer;transition:background .2s,color .2s}
+.langBtn:hover{background:var(--ink);color:var(--sheet)}
+html.fa{--display:"Vazirmatn","Schibsted Grotesk",Tahoma,sans-serif;--serif:"Vazirmatn",Tahoma,sans-serif}
+html.fa [data-i18n]{direction:rtl;unicode-bidi:isolate}
+html.fa [data-i18n],html.fa .giant,html.fa .menuBtn,html.fa .hire,html.fa .contact .corner,html.fa .contents p{letter-spacing:0}
+html.fa .menuBtn,html.fa .hire{font-family:"Vazirmatn",sans-serif;font-size:14px;font-weight:700}
+html.fa .menuBtn .mask{height:18px}
+html.fa .main h1{font-weight:700;line-height:1.32;text-align:right}
+html.fa .clipReveal[data-variant="offset"]{margin-left:0;margin-right:64px}
+html.fa .clipReveal .fa{font-family:var(--mono);font-size:.38em;vertical-align:.8em;margin:0 .4em 0 0}
+html.fa .giant{line-height:.9;font-weight:500}
+html.fa .apis .giant{left:-20px;top:-90px}
+html.fa .proj .giant{left:auto;right:-60px;top:-90px}
+html.fa .note h3,html.fa .work h2,html.fa .col h3{line-height:1.4}
+html.fa .note p,html.fa .col p,html.fa .apis .cap{line-height:1.85}
+html.fa .apis .cap{left:auto;right:64px}
+html.fa .contents{justify-content:flex-end}
+html.fa .contents p{font-size:62px;line-height:1.3;font-weight:500}
+html.fa .email p{font-weight:700}
+html.fa .menu{direction:rtl;padding:100px max(16px,12vw) 60px 16px}
+html.fa .menu li a small,html.fa .stamp{font-family:"Vazirmatn",var(--mono)}
+html.fa .label{font-family:"Vazirmatn",var(--mono)}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .clipReveal>span,.band,.avatar{transform:none!important;opacity:1!important}
+  .frame{opacity:1!important}
+}
+</style>
+
+<a class="skip" href="#canvas" data-i18n="skip">Skip to content</a>
+<div class="loader" id="loader" aria-hidden="true"><div><span></span><span></span><span></span><span></span></div></div>
+
+<header class="hdr">
+  <div class="brand">
+    <a class="logo" href="#f0" data-go="0" aria-label="Back to the start">
+      <svg viewBox="0 0 40 32" aria-hidden="true">
+        <g id="mtn"><path d="M3 28 L15 8 L22 18 L27 11 L37 28 Z"/></g>
+        <use href="#mtn" class="duo" transform="translate(3 3)"/>
+        <g class="ink"><path d="M3 28 L15 8 L22 18 L27 11 L37 28 Z"/></g>
+      </svg>
+    </a>
+    <span class="bar"></span>
+    <button class="menuBtn" id="menuBtn" aria-expanded="false" aria-controls="main-menu"><span class="mask"><span data-i18n="menu">Menu</span><span data-i18n="close">Close</span></span></button>
+  </div>
+  <div class="right"><button class="langBtn" id="langBtn" type="button" lang="fa" aria-label="فارسی">فا</button>
+  <a class="hire" href="#f7" data-go="7">
+    <svg viewBox="0 0 30 26" aria-hidden="true">
+      <path class="duo" d="M6 6h20v13H14l-6 5v-5H6z"/>
+      <g class="ink"><path d="M3 3h20v13H11l-6 5v-5H3z"/></g>
+    </svg><span data-i18n="hire">Hire me</span></a></div>
+</header>
+
+<nav class="menu" id="main-menu" aria-label="Main">
+  <ul>
+    <li><a href="#f0" data-go="0"><small>01</small><span data-i18n="m1">Home</span></a></li>
+    <li><a href="#f1" data-go="1"><small>02</small><span data-i18n="m6">About</span></a></li>
+    <li><a href="#f2" data-go="2"><small>03</small><span data-i18n="m2">Skills</span></a></li>
+    <li><a href="#f4" data-go="4"><small>05</small><span data-i18n="m3">Education</span></a></li>
+    <li><a href="#f6" data-go="6"><small>07</small><span data-i18n="m4">Resume</span></a></li>
+    <li><a href="#f7" data-go="7"><small>08</small><span data-i18n="m5">Contact</span></a></li>
+  </ul>
+  <div class="socials">
+    <a href="https://www.linkedin.com/" target="_blank" rel="noopener" data-i18n="s1">LinkedIn</a>
+    <a href="https://zarin-hub.com" target="_blank" rel="noopener" data-i18n="s2">ZarrinHub</a>
+  </div>
+</nav>
+
+<nav class="minimap" aria-label="Frames" id="minimap">
+  <div class="ticks" id="ticks"></div>
+  <span class="indicator" id="indicator">01</span>
+</nav>
+
+<div class="scrollcue" id="scrollcue" aria-hidden="true">
+  <div class="letters"><span>S</span><span>C</span><span>R</span><span>O</span><span>L</span><span>L</span></div>
+  <div class="vline"></div>
+</div>
+
+<main class="root" id="canvas">
+  <div class="ghost" id="ghost"></div>
+  <div class="center">
+    <div class="frames" id="frames">
+
+      <!-- 1 intro -->
+      <section class="frame" id="f0" data-variant="main" tabindex="0" aria-label="Introduction">
+        <div class="sheet main" data-sheet>
+          <div class="sun"></div>
+          <div class="band"></div>
+          <div class="hero-text"><h1 class="name">
+            <span class="clipReveal"><span data-i18n="h1">Armita</span></span>
+            <span class="clipReveal" data-variant="offset"><span data-i18n="h2">Golmohammadi<span class="dot">.</span></span></span>
+          </h1>
+          <p class="tagline" data-i18n="tag">Business development specialist in Tehran. I grow <b>website sales</b>, shape pricing and keep the numbers honest.</p></div>
+          <svg class="avatar" viewBox="0 0 300 420" aria-hidden="true">
+            <defs>
+              <g id="av-body"><path d="M40 420 C40 340 80 300 150 300 C220 300 260 340 260 420"/><path d="M128 262 L128 302 M172 262 L172 302"/></g>
+              <g id="av-head"><path d="M150 62 C96 62 70 104 72 160 C74 214 104 262 150 262 C196 262 226 214 228 160 C230 104 204 62 150 62 Z"/><path d="M70 170 C56 110 84 40 150 40 C216 40 248 104 232 172 C220 128 196 104 150 100 C110 104 86 128 70 170 Z"/></g>
+            </defs>
+            <g class="body"><use href="#av-body" class="duo" transform="translate(7 7)"/><g class="ink"><use href="#av-body"/><path d="M118 340 L150 372 L182 340"/></g></g>
+            <g class="head">
+              <use href="#av-head" class="duo" transform="translate(7 7)"/>
+              <g class="ink">
+                <path d="M150 62 C96 62 70 104 72 160 C74 214 104 262 150 262 C196 262 226 214 228 160 C230 104 204 62 150 62 Z" fill="var(--sheet)"/>
+                <path d="M70 170 C56 110 84 40 150 40 C216 40 248 104 232 172 C220 128 196 104 150 100 C110 104 86 128 70 170 Z" fill="var(--sheet)"/>
+                <path d="M106 168 Q118 158 130 168 M170 168 Q182 158 194 168"/>
+                <path d="M150 176 L144 204 L154 206"/>
+                <path d="M130 226 Q150 240 170 226"/>
+                <circle cx="118" cy="170" r="18"/><circle cx="182" cy="170" r="18"/><path d="M136 168 L164 168"/>
+              </g>
+            </g>
+          </svg>
+          <p class="stamp" data-i18n="stamp">Tehran · 35.69°N 51.39°E<br>Fintech · Business development</p>
+        </div>
+      </section>
+
+      <!-- 2 about -->
+      <section class="frame" id="f1" tabindex="0" aria-label="About me">
+        <div class="label" data-i18n="la">About me</div>
+        <div class="sheet about" data-sheet>
+          <div class="sun"></div>
+          <div class="ab-main">
+          <p class="lead" data-i18n="ab1">I'm a business development specialist. I turn services into products that customers can buy, price and trust<span class="dot">.</span></p>
+          <div class="path"><span class="fig" data-i18n="pk">My path</span><ol><li data-i18n="p1">Physics</li><li data-i18n="p2">Teaching</li><li data-i18n="p3">Operations</li><li data-i18n="p4">Business development</li></ol></div>
+          <div class="ctas">
+            <a class="btn" href="#f2" data-go="2"><span class="btn__label" data-i18n="cta1">See my skills</span><span class="btn__fill" aria-hidden="true"></span></a>
+            <a class="textlink" href="#f7" data-go="7" data-i18n="cta2">Get in touch →</a>
+          </div>
+          </div>
+          <div class="ab-side">
+            <p data-i18n="ab2">I work in fintech, where I lead website sales for a B2B platform. My week covers <b>pricing, partner contracts, customer growth</b> and the dashboards that show how it all performs.</p>
+            <p data-i18n="ab3">A degree in physics left me with one habit: <b>measure first, then decide.</b></p>
+            <dl class="facts">
+              <div><dt data-i18n="fk1">Based in</dt><dd data-i18n="fv1">Tehran</dd></div>
+              <div><dt data-i18n="fk2">Interests</dt><dd data-i18n="fv2">Data visualization, AI tools, teaching</dd></div>
+              <div><dt data-i18n="fk3">Languages</dt><dd data-i18n="fv3">Persian, English</dd></div>
+              <div><dt data-i18n="fk4">Studied</dt><dd data-i18n="fv4">BSc Physics</dd></div>
+            </dl>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3 Skills -->
+      <a class="frame sk-title" id="f2" href="#f3" data-go="3">
+        <div class="label" data-i18n="l1"><b>●</b> Skills</div>
+        <div class="sheet" data-sheet>
+          <h3 class="giant" data-i18n="g1">Skills<span class="dot">.</span></h3>
+          <div class="sun"></div>
+          <p class="cap" data-i18n="cap1">I work where <b>business, data and contracts</b> meet.</p>
+        </div>
+      </a>
+
+      <!-- 3 skill map -->
+      <a class="frame" id="f3" href="#f3">
+        <div class="label" data-i18n="l2">What I bring</div>
+        <div class="sheet skills" data-sheet>
+          <div class="sk-grid"><div class="sk"><svg viewBox="0 0 96 80" class="bob" aria-hidden="true"><g transform="translate(5 5)"><path d="M8 66 L32 40 L50 52 L84 14" fill="none" stroke-width="5"/></g><g class="ink"><path d="M8 66 L32 40 L50 52 L84 14"/><path d="M66 14 H84 V32"/><path d="M4 72 H90"/></g></svg><h3 data-i18n="g1h">Business line<span class="dot">.</span></h3><ul><li data-i18n="g1i0">Website sales &amp; growth</li><li data-i18n="g1i1">Markup and pricing models</li><li data-i18n="g1i2">Partner sourcing &amp; benchmarking</li><li data-i18n="g1i3">Market gap analysis</li></ul><p class="use"><span class="fig" data-i18n="uk1">In practice</span><span data-i18n="u1">Setting prices, growing site sales and choosing the next partners.</span></p></div><div class="sk"><svg viewBox="0 0 96 80" class="bob" aria-hidden="true"><g transform="translate(5 5)"><rect x="10" y="44" width="16" height="26"/><rect x="38" y="26" width="16" height="44"/><rect x="66" y="10" width="16" height="60"/></g><g class="ink"><rect x="10" y="44" width="16" height="26"/><rect x="38" y="26" width="16" height="44"/><rect x="66" y="10" width="16" height="60"/><path d="M4 70 H92"/></g></svg><h3 data-i18n="g2h">Data &amp; BI<span class="dot">.</span></h3><ul><li data-i18n="g2i0">Power BI dashboards</li><li data-i18n="g2i1">DAX &amp; data modeling</li><li data-i18n="g2i2">SQL on PostgreSQL</li><li data-i18n="g2i3">Excel &amp; Google Sheets</li></ul><p class="use"><span class="fig" data-i18n="uk2">In practice</span><span data-i18n="u2">Tracking sales and settlements so managers see the same numbers.</span></p></div><div class="sk"><svg viewBox="0 0 96 80" class="bob" aria-hidden="true"><g transform="translate(5 5)"><path d="M22 6 H62 L76 20 V74 H22 Z"/></g><g class="ink"><path d="M18 2 H58 L72 16 V70 H18 Z" fill="var(--sheet)"/><path d="M58 2 V16 H72 M30 30 H60 M30 42 H60 M30 54 H48"/></g></svg><h3 data-i18n="g3h">Contracts &amp; writing<span class="dot">.</span></h3><ul><li data-i18n="g3i0">Service, SLA &amp; NDA contracts</li><li data-i18n="g3i1">Vendor contract review</li><li data-i18n="g3i2">Access justification letters</li><li data-i18n="g3i3">Board-level reports in formal Persian</li></ul><p class="use"><span class="fig" data-i18n="uk3">In practice</span><span data-i18n="u3">Signing providers and customers on clear, enforceable terms.</span></p></div><div class="sk"><svg viewBox="0 0 96 80" class="bob" aria-hidden="true"><g transform="translate(5 5)"><path d="M8 8 H60 V42 H30 L16 54 V42 H8 Z"/><path d="M40 30 H88 V62 H80 V72 L68 62 H40 Z"/></g><g class="ink"><path d="M8 8 H60 V42 H30 L16 54 V42 H8 Z" fill="var(--sheet)"/><path d="M40 30 H88 V62 H80 V72 L68 62 H40 Z" fill="var(--sheet)"/><path d="M52 46 H76"/></g></svg><h3 data-i18n="g4h">People &amp; languages<span class="dot">.</span></h3><ul><li data-i18n="g4i0">Persian, native</li><li data-i18n="g4i1">English, former IELTS teacher</li><li data-i18n="g4i2">Office management</li><li data-i18n="g4i3">Teaching &amp; training</li></ul><p class="use"><span class="fig" data-i18n="uk4">In practice</span><span data-i18n="u4">Working with clients, vendors and teams in two languages.</span></p></div></div>
+          <div class="chips"><span class="fig" data-i18n="tb">Toolbelt</span><span>Power BI</span><span>DAX</span><span>SQL</span><span>PostgreSQL</span><span>Excel</span><span>Google Sheets</span><span>AI tools</span><span>Physics</span></div>
+          <div class="dots" data-drift="12 8"></div>
+        </div>
+      </a>
+
+      <!-- 4 education -->
+      <a class="frame" id="f4" href="#f4">
+        <div class="label" data-i18n="l3">Education</div>
+        <div class="sheet atom" data-sheet>
+          <svg viewBox="0 0 325 360" class="bob" aria-hidden="true">
+            <defs><g id="orb"><ellipse cx="162" cy="180" rx="140" ry="52"/><ellipse cx="162" cy="180" rx="140" ry="52" transform="rotate(60 162 180)"/><ellipse cx="162" cy="180" rx="140" ry="52" transform="rotate(-60 162 180)"/></g></defs>
+            <g fill="none" stroke="var(--duo)" stroke-width="6" transform="translate(5 5)"><use href="#orb"/></g>
+            <g class="ink"><use href="#orb"/></g>
+            <circle cx="166" cy="184" r="24" class="duo"/>
+            <circle cx="162" cy="180" r="24" class="ink" style="fill:var(--sun)"/>
+            <circle cx="302" cy="180" r="9" fill="var(--line)"/>
+            <circle cx="92" cy="301" r="9" fill="var(--line)"/>
+            <circle cx="92" cy="59" r="9" fill="var(--line)"/>
+          </svg>
+          <h2 class="edu-h" data-i18n="eh">BSc Physics<span class="dot">.</span></h2>
+          <p data-i18n="edu">Atomic &amp; Molecular · Kharazmi University · 2020–2025</p>
+        </div>
+      </a>
+
+      <!-- 5 Resume -->
+      <a class="frame proj" id="f5" href="#f6" data-go="6">
+        <div class="label" data-i18n="l4">Resume</div>
+        <div class="sheet" data-sheet><h3 class="giant" data-i18n="g4">Resume<span class="dot">.</span></h3></div>
+      </a>
+
+      <!-- 6 timeline -->
+      <a class="frame" id="f6" href="#f6">
+        <div class="label" data-i18n="l5">Experience</div>
+        <div class="sheet tlw" data-sheet>
+          <h2 data-i18n="xh">Experience<span class="dot">.</span></h2>
+          <ol class="tl"><li class="st"><span class="yr" data-i18n="t1y">Earlier</span><i></i><h3 data-i18n="t1r">English &amp; IELTS teacher</h3><p data-i18n="t1o">Also a school office manager</p></li><li class="st"><span class="yr" data-i18n="t2y">2022 →</span><i></i><h3 data-i18n="t2r">Office management</h3><p data-i18n="t2o">Alumni Association, Organization for the Development of Brilliant Talents · part-time</p></li><li class="st"><span class="yr" data-i18n="t3y">2025</span><i></i><h3 data-i18n="t3r">Office Manager</h3><p data-i18n="t3o">Danayan Financial Holding</p></li><li class="st now"><span class="yr" data-i18n="t4y">Oct 2025 → now</span><i></i><h3 data-i18n="t4r">Business Line Director</h3><p data-i18n="t4o">ZarinPal · Hirad Financial Solutions</p><p class="d" data-i18n="t4d">Leads website sales and pricing for a B2B platform.</p></li></ol>
+        </div>
+      </a>
+
+      <!-- 7 contact -->
+      <div class="frame" id="f7" aria-label="Contact">
+        <div class="label" data-i18n="l6">Contact</div>
+        <div class="sheet contact" data-sheet>
+          <a class="corner" data-position="tl" href="https://www.linkedin.com/" target="_blank" rel="noopener" data-i18n="k1">LinkedIn</a>
+          <a class="corner" data-position="tr" href="https://zarin-hub.com" target="_blank" rel="noopener" data-i18n="k2">ZarrinHub</a>
+          <a class="corner" data-position="bl" href="#f6" data-go="6" data-i18n="k3">Resume</a>
+          <div class="corner" data-position="br"><span id="clock">Tehran</span><small data-i18n="k4">Local time · UTC+03:30</small></div>
+          <div class="cta-center"><h2 class="cta-h" data-i18n="ch">Have a role or project in mind<span class="dot">?</span></h2>
+          <button class="copy" id="copy" type="button" aria-describedby="addr">
+            <span class="email"><p data-i18n="em">Email</p><p data-i18n="cp">Copied</p></span>
+            <span class="addr" id="addr">armitagolmohammadi@gmail.com</span>
+          </button>
+          <p class="hint" data-i18n="hint">Click to copy my email, then write to me.</p></div>
+          <span class="vh" aria-live="polite" id="live"></span>
+        </div>
+      </div>
+
+      <!-- 8 manifesto -->
+      <a class="frame manifesto" id="f8" href="#f0" data-go="0">
+        <div class="label" data-i18n="l7">House rules</div>
+        <div class="sheet" data-sheet>
+          <div class="contents"><p data-i18n="man">
+            Read the numbers<span>.</span><br>
+            Price it fairly<span>.</span><br>
+            Document everything<span>.</span><br>
+            Write tight contracts<span>.</span><br>
+            Measure twice<span>.</span><br>
+            Keep it simple<span>.</span><br>
+            Stay curious<span>.</span>
+          </p></div>
+        </div>
+      </a>
+
+    </div>
+  </div>
+  <svg class="cross" id="cross" viewBox="0 0 22 22" aria-hidden="true"><path d="M11 0v22M0 11h22" stroke="#fff" stroke-width="1.5"/></svg>
+</main>
+
+<script>
+(()=>{
+  const root=document.documentElement;
+  const frames=[...document.querySelectorAll('.frame')];
+  const N=frames.length,W=1200,H=720,GAP=8;
+  const strip=document.getElementById('frames'),ghost=document.getElementById('ghost');
+  const ind=document.getElementById('indicator'),ticks=document.getElementById('ticks'),mini=document.getElementById('minimap');
+  const cue=document.getElementById('scrollcue');
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const mq=matchMedia('(max-width: 767px)');
+  frames.forEach((f,i)=>f.style.left=(i*(W+GAP))+'px');
+
+  for(let i=0;i<24;i++)ticks.appendChild(document.createElement('i'));
+  const TW=231,TRK=30;
+  frames.forEach((f,i)=>{const a=document.createElement('a');a.className='tracker';a.href='#'+f.id;a.dataset.go=i;
+    a.style.left=(i/(N-1)*(TW-TRK))+'px';a.innerHTML='<span class="vh">Go to frame '+(i+1)+'</span>';mini.insertBefore(a,ind)});
+
+  let fit=1,stack=false,z=1,f=0,max=1;
+  function layout(){
+    stack=mq.matches;
+    root.classList.toggle('stack',stack);root.classList.toggle('canvas-mode',!stack);
+    if(stack){
+      strip.style.transform='';
+      const k=frames[0].getBoundingClientRect().width/W;root.style.setProperty('--k',k);root.style.setProperty('--inv',1);
+      return;
+    }
+    fit=Math.min(1,innerWidth*0.88/W,innerHeight*0.78/H);
+    root.style.setProperty('--fit',fit);
+    ghost.style.height=((N-1)*innerHeight*0.95+innerHeight)+'px';
+    max=Math.max(1,document.documentElement.scrollHeight-innerHeight);
+  }
+  addEventListener('resize',layout);mq.addEventListener('change',layout);layout();
+
+  function tick(){
+    if(!stack){
+      const y=scrollY,fT=Math.min(N-1,Math.max(0,y/max*(N-1)));
+      f+= reduce?(fT-f):(fT-f)*0.12;
+      const moving=Math.abs(fT-f)>0.004;
+      const zT=y<6?1:(moving?0.64:0.6);
+      z+= reduce?(zT-z):(zT-z)*0.09;
+      const tx=(W-W*z)/2-f*(W+GAP)*z;
+      strip.style.transform=`matrix(${z},0,0,${z},${tx},0)`;
+      root.style.setProperty('--inv',(1/(z*fit)).toFixed(4));
+      ind.style.transform=`translateX(${f/(N-1)*(TW-TRK)}px)`;
+      ind.textContent=String(Math.round(f)+1).padStart(2,'0');
+      cue.style.opacity=y<6?1:0;
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  function go(i){
+    if(stack){frames[i].scrollIntoView({behavior:reduce?'auto':'smooth',block:'center'});return}
+    scrollTo({top:i/(N-1)*max,behavior:reduce?'auto':'smooth'});
+  }
+  document.addEventListener('click',e=>{
+    const a=e.target.closest('[data-go]');if(!a)return;
+    e.preventDefault();closeMenu();go(+a.dataset.go);
+  });
+  frames.forEach((fr,i)=>fr.addEventListener('focus',()=>{if(!stack)go(i)}));
+  document.querySelectorAll('.frame a[href^="#"]:not([data-go])').forEach(a=>a.addEventListener('click',e=>e.preventDefault()));
+  frames.forEach(fr=>{if(fr.tagName==='A'&&fr.getAttribute('href').startsWith('#')&&!fr.dataset.go)fr.addEventListener('click',e=>e.preventDefault())});
+
+  // menu
+  const mb=document.getElementById('menuBtn'),menu=document.getElementById('main-menu');
+  function closeMenu(){menu.classList.remove('open');mb.setAttribute('aria-expanded','false')}
+  mb.addEventListener('click',()=>{const o=!menu.classList.contains('open');menu.classList.toggle('open',o);mb.setAttribute('aria-expanded',String(o))});
+  addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu()});
+
+  // crosshair + drift
+  const cross=document.getElementById('cross');const drift=[...document.querySelectorAll('[data-drift]')];
+  addEventListener('pointermove',e=>{
+    cross.style.transform=`translate(${e.clientX-11}px,${e.clientY-11}px)`;
+    if(reduce)return;
+    const nx=e.clientX/innerWidth-.5,ny=e.clientY/innerHeight-.5;
+    drift.forEach(d=>{const[dx,dy]=d.dataset.drift.split(' ').map(Number);d.style.transform=`translate(${nx*dx*2}px,${ny*dy*2}px)`});
+  });
+
+  // copy email
+  const btn=document.getElementById('copy'),live=document.getElementById('live'),addr=document.getElementById('addr').textContent;
+  let t;
+  btn.addEventListener('click',()=>{
+    const done=()=>{btn.classList.add('copied');live.textContent=lang==='fa'?'کپی شد':'Copied';clearTimeout(t);t=setTimeout(()=>{btn.classList.remove('copied');live.textContent=''},1500)};
+    const fallback=()=>{const r=document.createRange();r.selectNodeContents(document.getElementById('addr'));const s=getSelection();s.removeAllRanges();s.addRange(r);done()};
+    try{navigator.clipboard.writeText(addr).then(done,fallback)}catch(_){fallback()}
+  });
+
+  // Tehran clock
+  const clock=document.getElementById('clock');
+  function setClock(){try{clock.textContent=new Intl.DateTimeFormat(lang==='fa'?'fa-IR':'en-GB',{timeZone:'Asia/Tehran',hour:'2-digit',minute:'2-digit'}).format(new Date())}catch(_){}}
+
+  const FA={"skip": "رفتن به محتوا", "menu": "منو", "close": "بستن", "hire": "همکاری", "m1": "خانه", "m2": "مهارت‌ها", "m3": "تحصیلات", "m4": "رزومه", "m5": "تماس", "s1": "لینکدین", "s2": "زرین‌هاب", "h1": "آرمیتا", "h2": "گل‌محمدی<span class=\"dot\">.</span>", "stamp": "تهران · ۳۵٫۶۹° شمالی ۵۱٫۳۹° شرقی<br>فین‌تک · توسعه‌ی کسب‌وکار", "l1": "<b>●</b> مهارت‌ها", "g1": "مهارت‌ها<span class=\"dot\">.</span>", "cap1": "جایی کار می‌کنم که <b>کسب‌وکار، داده و قرارداد</b> به هم می‌رسند.", "l2": "آنچه با خودم می‌آورم", "tb": "ابزارها", "g1h": "خط کسب‌وکار<span class=\"dot\">.</span>", "g1i0": "فروش و رشد سایت", "g1i1": "مدل‌های قیمت‌گذاری و حاشیه سود", "g1i2": "جذب شریک و مقایسه‌ی رقبا", "g1i3": "تحلیل خلأهای بازار", "g2h": "داده و هوش تجاری<span class=\"dot\">.</span>", "g2i0": "داشبوردهای Power BI", "g2i1": "DAX و مدل‌سازی داده", "g2i2": "SQL روی PostgreSQL", "g2i3": "اکسل و گوگل‌شیت", "g3h": "قرارداد و نگارش<span class=\"dot\">.</span>", "g3i0": "قراردادهای سرویس، SLA و NDA", "g3i1": "بررسی قرارداد تأمین‌کنندگان", "g3i2": "نامه‌های توجیهی درخواست دسترسی", "g3i3": "گزارش هیئت‌مدیره به فارسی رسمی", "g4h": "ارتباط و زبان<span class=\"dot\">.</span>", "g4i0": "فارسی، زبان مادری", "g4i1": "انگلیسی، مدرس سابق آیلتس", "g4i2": "مدیریت دفتر", "g4i3": "آموزش و تدریس", "l3": "تحصیلات", "eh": "کارشناسی فیزیک<span class=\"dot\">.</span>", "edu": "گرایش اتمی و مولکولی · دانشگاه خوارزمی · ۱۳۹۹ تا ۱۴۰۴", "l4": "رزومه", "g4": "رزومه<span class=\"dot\">.</span>", "l5": "سوابق کاری", "xh": "سوابق کاری<span class=\"dot\">.</span>", "t1y": "پیش‌تر", "t1r": "مدرس زبان انگلیسی و آیلتس", "t1o": "و مدیر دفتر مدرسه", "t2y": "از ۱۴۰۱", "t2r": "مدیریت دفتر", "t2o": "کانون دانش‌آموختگان سازمان ملی پرورش استعدادهای درخشان · پاره‌وقت", "t3y": "۱۴۰۴", "t3r": "مدیر دفتر", "t3o": "گروه مالی دانایان", "t4y": "مهر ۱۴۰۴ تا امروز", "t4r": "مدیر خط کسب‌وکار", "t4o": "زرین‌پال · راهکار مالی هیراد زرین", "t4d": "مسئول فروش سایت و قیمت‌گذاری یک پلتفرم B2B.", "l6": "تماس", "k1": "لینکدین", "k2": "زرین‌هاب", "k3": "رزومه", "k4": "وقت محلی تهران", "em": "ایمیل", "cp": "کپی شد", "l7": "قوانین خانه", "man": "عدد را بخوان<span>.</span><br>منصفانه قیمت بگذار<span>.</span><br>همه‌چیز را مستند کن<span>.</span><br>قرارداد را دقیق بنویس<span>.</span><br>دو بار اندازه بگیر<span>.</span><br>ساده نگهش دار<span>.</span><br>کنجکاو بمان<span>.</span>", "m6": "درباره‌ی من", "la": "درباره‌ی من", "ab1": "کارشناس توسعه‌ی کسب‌وکار هستم. سرویس‌ها را به محصولی تبدیل می‌کنم که مشتری بتواند بخرد، قیمتش را بفهمد و به آن اعتماد کند<span class=\"dot\">.</span>", "ab2": "در حوزه‌ی فین‌تک کار می‌کنم و فروش سایت یک پلتفرم B2B را پیش می‌برم. کار هر هفته‌ام <b>قیمت‌گذاری، قرارداد با شرکا، جذب مشتری</b> و داشبوردهایی است که عملکرد همه‌ی این‌ها را نشان می‌دهد.", "ab3": "از رشته‌ی فیزیک یک عادت برایم مانده: <b>اول اندازه بگیر، بعد تصمیم بگیر.</b>", "fk1": "محل", "fv1": "تهران", "fk2": "علاقه‌ها", "fv2": "مصورسازی داده، ابزارهای هوش مصنوعی، آموزش", "fk3": "زبان‌ها", "fv3": "فارسی، انگلیسی", "fk4": "تحصیلات", "fv4": "کارشناسی فیزیک", "tag": "کارشناس توسعه‌ی کسب‌وکار در تهران. <b>فروش سایت</b> را رشد می‌دهم، قیمت‌گذاری را شکل می‌دهم و حواسم به درستی اعداد هست.", "pk": "مسیر من", "p1": "فیزیک", "p2": "تدریس", "p3": "عملیات و اداری", "p4": "توسعه‌ی کسب‌وکار", "cta1": "مهارت‌هایم را ببینید", "cta2": "تماس با من ←", "uk1": "در عمل", "uk2": "در عمل", "uk3": "در عمل", "uk4": "در عمل", "u1": "تعیین قیمت‌ها، رشد فروش سایت و انتخاب شرکای بعدی.", "u2": "پایش فروش و تسویه‌ها تا مدیران همه یک عدد را ببینند.", "u3": "بستن قرارداد با تأمین‌کنندگان و مشتریان با شرایط روشن و قابل‌اجرا.", "u4": "کار با مشتریان، تأمین‌کنندگان و تیم‌ها به دو زبان.", "ch": "نقش یا پروژه‌ای در ذهن دارید<span class=\"dot\">؟</span>", "hint": "برای کپی ایمیل کلیک کنید و برایم بنویسید."};
+
+  const nodes=[...document.querySelectorAll('[data-i18n]')];
+  const EN={};nodes.forEach(n=>EN[n.dataset.i18n]=n.innerHTML);
+  const langBtn=document.getElementById('langBtn');
+  let lang='en';
+  function setLang(l){
+    lang=l;
+    nodes.forEach(n=>{const k=n.dataset.i18n;n.innerHTML=(l==='fa'?FA[k]:EN[k])??EN[k]});
+    root.lang=l==='fa'?'fa':'en';root.classList.toggle('fa',l==='fa');
+    langBtn.textContent=l==='fa'?'EN':'فا';langBtn.lang=l==='fa'?'en':'fa';
+    langBtn.setAttribute('aria-label',l==='fa'?'English':'فارسی');
+    setClock();
+    try{localStorage.setItem('lang',l)}catch(_){}
+  }
+  langBtn.addEventListener('click',()=>setLang(lang==='fa'?'en':'fa'));
+
+  let saved=null;try{saved=localStorage.getItem('lang')}catch(_){}
+  setLang(location.hash==='#fa'?'fa':(saved==='fa'?'fa':'en'));setInterval(setClock,20000);
+
+  // load sequence
+  const start=()=>{document.getElementById('loader').classList.add('done');setTimeout(()=>{root.classList.add('ready');
+    document.querySelectorAll('.clipReveal>span').forEach((s,i)=>s.style.transitionDelay=(i*70)+'ms')},250)};
+  (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(()=>setTimeout(start,350));
+  setTimeout(start,2500);
+})();
+</script>
+
+</body></html>
